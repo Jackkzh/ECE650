@@ -34,14 +34,14 @@ void ts_free_nolock(void *ptr);
 
 
 //Best Fit malloc/free
-void * bf_malloc(size_t size, meta_info * free_block_head, bool isLock);
-void bf_free(void *ptr, meta_info * free_block_head);
+void * bf_malloc(size_t size, meta_info ** free_block_head, bool isLock);
+void bf_free(void *ptr, meta_info ** free_block_head);
 
 meta_info * creatNewBlock(size_t size, bool isLock);
 meta_info * splitBlock(meta_info * curr, size_t size);
-void addFreeBlock(meta_info * curr, meta_info * free_block_head);
-void removeBlock(meta_info * curr, meta_info * free_block_head);
+void addFreeBlock(meta_info * curr, meta_info ** free_block_head);
+void removeBlock(meta_info * curr, meta_info ** free_block_head);
 
-void checkBlockConnected(meta_info * curr, meta_info * free_block_head);
+void checkBlockConnected(meta_info * curr, meta_info ** free_block_head);
 void mergeBlock(meta_info * new_address, size_t incre_size);
 meta_info * getBestBlock(meta_info * start, size_t size);

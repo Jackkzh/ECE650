@@ -11,25 +11,25 @@
 void * ts_malloc_lock(size_t size) {
     pthread_mutex_lock(&lock);
     bool isLock = true;
-    void * curr = bf_malloc(size, free_block_head_lock, isLock);
+    void * curr = bf_malloc(size, &free_block_head_lock, isLock);
     pthread_mutex_unlock(&lock);
     return curr;
 }
 
 void ts_free_lock(void * ptr) {
     pthread_mutex_lock(&lock);
-    bf_free(ptr, free_block_head_lock);
+    bf_free(ptr, &free_block_head_lock);
     pthread_mutex_unlock(&lock);
 }
 
 void * ts_malloc_nolock(size_t size) {
     bool isLock = false;
-    void * curr = bf_malloc(size, free_block_head_nolock, isLock);
+    void * curr = bf_malloc(size, &free_block_head_nolock, isLock);
     return curr;
 }
 
 void ts_free_nolock(void *ptr) {
-    bf_free(ptr, free_block_head_nolock);
+    bf_free(ptr, &free_block_head_nolock);
 }
 
 
@@ -61,15 +61,15 @@ meta_info * getBestBlock(meta_info * start, size_t size) {
     This function would allocate memory block with size as input, using existing free block or 
     creating new memory using sbrk() depending on different conditions
 */
-void * bf_malloc(size_t size, meta_info * free_block_head, bool isLock) {
+void * bf_malloc(size_t size, meta_info ** free_block_head, bool isLock) {
     // print a message "its in malloc"
 
     meta_info * curr = NULL;
     meta_info * to_use = NULL;
 
-    if (free_block_head != NULL) {
+    if (*free_block_head != NULL) {
 
-        curr = free_block_head;
+        curr = *free_block_head;
 
         to_use = getBestBlock(curr, size);
 
@@ -88,7 +88,7 @@ void * bf_malloc(size_t size, meta_info * free_block_head, bool isLock) {
             return (void *)to_use + sizeof(meta_info);
         } 
     } 
-    if (free_block_head == NULL || to_use == NULL) {
+    if (*free_block_head == NULL || to_use == NULL) {
 
         //printf("BF -- creates new blocks ");
         // 2. no usable free blocks or free-blocks list is empty
@@ -123,7 +123,7 @@ meta_info * creatNewBlock(size_t size, bool isLock) {
 }
 
 
-void bf_free(void *ptr, meta_info * free_block_head) {
+void bf_free(void *ptr, meta_info ** free_block_head) {
     if (ptr == NULL) {
         return;
     }
@@ -141,7 +141,7 @@ void bf_free(void *ptr, meta_info * free_block_head) {
     This function checks if there exists adjacent free memory space, and 
     merge them when such situation occurs, returns the altered address 
 */
-void checkBlockConnected(meta_info * curr, meta_info * free_block_head) {
+void checkBlockConnected(meta_info * curr, meta_info ** free_block_head) {
     // curr is before curr->next 
     meta_info * new_address = NULL;
     if (curr->next != NULL && (void *)curr + sizeof(meta_info) + curr->size == (void *)curr->next) {
@@ -171,18 +171,19 @@ void mergeBlock(meta_info * new_address, size_t incre_size) {
 /*
     This function removes an element(of type meta_info *) from the free-blocks list
 */
-void removeBlock(meta_info * curr, meta_info * free_block_head) {
-    printf("in removeBlock\n");
-    meta_info * p = free_block_head;
+void removeBlock(meta_info * curr, meta_info ** free_block_head) {
+    //printf("in removeBlock\n");
+    meta_info * p = *free_block_head;
     while (p != NULL) {
         if (curr == p) {
             //printf("in removeBLock: size is %lu\n",p->size);
-            if (p == free_block_head) {
-                free_block_head = curr->next;
+            if (p == *free_block_head) {
+                *free_block_head = curr->next;
             }
             if (p->prev != NULL) {
-                //printf("prev not null\n");
                 p->prev->next = p->next;
+            } 
+            if (p->next != NULL) {
                 p->next->prev = p->prev;
             }
 
@@ -196,22 +197,22 @@ void removeBlock(meta_info * curr, meta_info * free_block_head) {
 
 
 
-void addFreeBlock(meta_info * curr, meta_info * free_block_head) {
+void addFreeBlock(meta_info * curr, meta_info ** free_block_head) {
     // add a newly freed block to the end of the "free-blocks" list
     curr->isUsed = false;
     // 1. if the free block list is empty
-    if (free_block_head == NULL) {
-        free_block_head = curr;
+    if (*free_block_head == NULL) {
+        *free_block_head = curr;
         curr->next = NULL;
         curr->prev = NULL;
     } else {
     // 2. add to the list according to the position of their physical addresses
-        meta_info * toAdd = free_block_head;
+        meta_info * toAdd = *free_block_head;
         if (curr < toAdd) {
-            curr->next = free_block_head;
-            free_block_head->prev = curr;
+            curr->next = *free_block_head;
+            (*free_block_head)->prev = curr;
             curr->prev = NULL;
-            free_block_head = curr;
+            *free_block_head = curr;
         } else {
             while (toAdd != NULL) {
                 if (curr > toAdd) {
@@ -230,6 +231,7 @@ void addFreeBlock(meta_info * curr, meta_info * free_block_head) {
             }
         }
     }
+
 }
 
 
@@ -246,15 +248,3 @@ meta_info * splitBlock(meta_info * curr, size_t size) {
     curr->size = size;
     return new_block;
 }
-
-
-
-
-
-// unsigned long get_data_segment_size() {
-//     return data_segment_size;
-// }
-
-// unsigned long get_data_segment_free_space_size() {
-//     return free_data_segment_size;
-// }
