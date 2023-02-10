@@ -6,7 +6,7 @@
 
 
 
-pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
+
 
 struct _meta_info {
     size_t size;
@@ -21,7 +21,7 @@ typedef struct _meta_info meta_info;
 meta_info * free_block_head_lock = NULL;
 // a global variable to store the head of the free-blocks list
 __thread meta_info * free_block_head_nolock = NULL;
-
+pthread_mutex_t lock = PTHREAD_MUTEX_INITIALIZER;
 
 // version 1 : locking version
 void * ts_malloc_lock(size_t size);
