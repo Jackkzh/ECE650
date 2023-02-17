@@ -9,13 +9,12 @@
 // add header for exit
 #include <stdlib.h>
 #include <iostream>
-#include "potato.h"
 
 using namespace std;
 
 int serverStartConnection(const char *port);
 int clientInit(const char *host, const char *port);
 
-vector<int> clientJoinConnection(const char *port, vector<int> player_fd, int player_num, int socket_fd);
+vector<int> clientJoinConnection(int socket_fd, vector<int> player_fd_list, int player_num);
 
 // client establish connection with each other

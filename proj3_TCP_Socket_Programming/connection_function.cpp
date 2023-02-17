@@ -105,7 +105,7 @@ int clientInit(const char *host, const char *port) {
  * the socket_fd of the server that listen to the connection,
  * accept the all the connections and return the list of socket_fds of the client.
 */
-vector<int> clientJoinConnection(int socket_fd, const char *port, vector<int> player_fd_list, int player_num) {
+vector<int> clientJoinConnection(int socket_fd, vector<int> player_fd_list, int player_num) {
     struct sockaddr_storage socket_addr;
     socklen_t socket_addr_len = sizeof(socket_addr);
     int new_fd;
@@ -122,6 +122,7 @@ vector<int> clientJoinConnection(int socket_fd, const char *port, vector<int> pl
         }
         player_fd_list.push_back(new_fd);
     }
+    cout << "succfully connected to all players: " << player_num << endl;
     return player_fd_list;
 }
 

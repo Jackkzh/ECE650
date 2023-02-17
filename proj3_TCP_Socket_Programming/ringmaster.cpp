@@ -15,11 +15,11 @@ int main(int argc, char *argv[]) {
 
     // accept the connection from all the players
     vector<int> player_fd_list;
-    player_fd_list = clientJoinConnection(port, player_fd_list, player_num, socket_fd);
+    player_fd_list = clientJoinConnection(socket_fd, player_fd_list, player_num);
     
     // player builds a ring 
     
 
-    
+
 
 }
