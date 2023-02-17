@@ -1,11 +1,25 @@
+#include "potato.h"
+#include "connection_function.h"
 
 
-// 1. establish 10 TCP sockets with 10 different player
-// 2. send the port number to each player
-// 3. send the player's left and right neighbor to each player as well as their ID
-// 4. send the number of hops to each player
-// 5. send the potato to the first player
-// 6. receive the potato from the last player
-// 7. print the potato trace
-// 8. close all sockets
+int main(int argc, char *argv[]) {
+    // skip the check for the number of arguments steps
 
+    // get the port number
+    const char *port = argv[1];
+    int player_num = atoi(argv[2]);
+    int hop_num = atoi(argv[3]);
+
+    // server inits socket and listen to the connection
+    int socket_fd = serverStartConnection(port);
+
+    // accept the connection from all the players
+    vector<int> player_fd_list;
+    player_fd_list = clientJoinConnection(port, player_fd_list, player_num, socket_fd);
+    
+    // player builds a ring 
+    
+
+    
+
+}
