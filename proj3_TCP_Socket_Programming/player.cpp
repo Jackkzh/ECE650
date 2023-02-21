@@ -103,15 +103,7 @@ int main(int argc, char *argv[]) {
         cerr << "Error: cannot accept connection" << endl;
         return EXIT_FAILURE;
     }
-    const char *msg = "hello";
-    send(server_fd, msg, strlen(msg), 0);
-    send(player_fd, msg, strlen(msg), 0);
-    cout << "self: " << msg << endl;
 
-    char hello[1024];
-    memset(hello, 0, sizeof(hello));
-    recv(client_fd, hello, sizeof(hello), 0);
-    cout << "my neighbor server says: " << hello << endl;
 
     // cout << "player " << my_id << " connects to its left neighbor" << endl;
 
@@ -153,7 +145,7 @@ int main(int argc, char *argv[]) {
                     int left = 0;
                     lenn = recv(listen_list[i], &potato, sizeof(potato), MSG_WAITALL);
                     cout << "lenn: " << lenn << endl;
-                    break;
+                    //break;
                     if (lenn == 0) {
                         continue;
                     }
@@ -165,7 +157,7 @@ int main(int argc, char *argv[]) {
             }
         }
         if (lenn == 0) {
-            break;
+            //break;
         }
         // cout << "is potato: " << is_potato << endl;
         // cout << "after recv count" << potato.count << endl;
@@ -202,60 +194,11 @@ int main(int argc, char *argv[]) {
             }
         }
     }
-
-    // Potato potato;
-    // vector<int> all_connected_fd{server_fd, client_fd, player_fd};
-    // while (1) {
-    //     fd_set readfds;
-    //     FD_ZERO(&readfds);
-    //     for (int i = 0; i < 3; i++) {
-    //         FD_SET(all_connected_fd[i], &readfds);
-    //     }
-    //     select(100, &readfds, NULL, NULL, NULL);
-    //     int len;
-    //     for (int i = 0; i < 3; i++) {
-    //         if (FD_ISSET(all_connected_fd[i], &readfds)) {
-    //             cout << "listening on fd " << all_connected_fd[i] << endl;
-    //             len = recv(all_connected_fd[i], &potato, sizeof(potato), MSG_WAITALL);
-    //             cout << "len of potato is " << len << endl;
-    //             break;
-    //         }
-    //     }
-
-    //     // receive num_hops =0 potato from master or shut down signal 0 from other socket, shut down
-    //     if (potato.hops == 0 || len == 0) {
-    //         break;
-    //     }
-    //     // send potato to master
-    //     else if (potato.hops == 1) {
-    //         potato.hops--;
-    //         potato.playerID[potato.count] = my_id;
-    //         potato.count++;
-    //         send(player_fd, &potato, sizeof(potato), 0);
-    //         cout << "I'm it" << endl;
-    //     }
-    //     // send potato to neighbor
-    //     else {
-    //         potato.hops--;
-    //         potato.playerID[potato.count] = my_id;
-    //         potato.count++;
-    //         int random = rand() % 2;
-    //         if (random == 0) {
-    //             send(server_fd, &potato, sizeof(potato), 0);
-    //             int left_neighbor_id = (my_id + player_num - 1) % player_num;
-    //             cout << "Sending potato to " << left_neighbor_id << endl;
-    //         } else {
-    //             send(client_fd, &potato, sizeof(potato), 0);
-    //             int right_neighbor_id = (my_id + 1) % player_num;
-    //             cout << "Sending potato to " << right_neighbor_id << endl;
-    //         }
-    //     }
-    // }
+ 
     close(client_fd);
     close(server_fd);
     close(player_fd);
     return 0;
 }
-
 // fd_num is the socket descriptor that has data to read
 // send potato to the right neighbor or left neighbor

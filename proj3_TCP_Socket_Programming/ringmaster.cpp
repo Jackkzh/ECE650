@@ -33,17 +33,17 @@ int main(int argc, char *argv[]) {
         cout << "Player " << i << " has IP address " << player_ip_list[i] << " and port number " << player_port_list[i] << endl;
     }
 
-    for (int i = 0; i < player_num; i++) {
-        int neighbor_id = (i + 1) % player_num;
-        int neighbor_port = player_port_list[neighbor_id];
-        char neighbor_ip[100];
-        memset(neighbor_ip, 0, sizeof(neighbor_ip));
-        strcpy(neighbor_ip, player_ip_list[neighbor_id]);
-        send(player_fd_list[i], &neighbor_port, sizeof(neighbor_port), 0);
-        send(player_fd_list[i], &neighbor_ip, sizeof(neighbor_ip), 0);
-    }
+    // for (int i = 0; i < player_num; i++) {
+    //     int neighbor_id = (i + 1) % player_num;
+    //     int neighbor_port = player_port_list[neighbor_id];
+    //     char neighbor_ip[100];
+    //     memset(neighbor_ip, 0, sizeof(neighbor_ip));
+    //     strcpy(neighbor_ip, player_ip_list[neighbor_id]);
+    //     send(player_fd_list[i], &neighbor_port, sizeof(neighbor_port), 0);
+    //     send(player_fd_list[i], &neighbor_ip, sizeof(neighbor_ip), 0);
+    // }
 
-    // playerConnect(player_fd_list, player_port_list, player_ip_list);
+    playerConnect(player_fd_list, player_port_list, player_ip_list);
 
     // print all players' fd
     // for (int i = 0; i < player_num; i++) {
@@ -57,35 +57,50 @@ int main(int argc, char *argv[]) {
         cout << "player " << i << " fd: " << player_fd_list[i] << endl;
     }
 
-    Potato potato(hop_num);
-    int rand_player = rand() % player_num;
-    cout << "Ready to start the game, sending potato to player " << rand_player << endl;
+      //begin playing
+  Potato potato(hop_num);
 
-    char hello[1024];
-    memset(hello, 0, sizeof(hello));
-    recv(player_fd_list[0], hello, sizeof(hello), 0);
-    cout << "myplayer0 says: " << hello << endl;
 
-    char hello1[1024];
-    memset(hello1, 0, sizeof(hello1));
-    recv(player_fd_list[1], hello1, sizeof(hello1), 0);
-    cout << "my player1 says: " << hello1 << endl;
+  if (potato.hops != 0) {  //send potato to first player
+    srand((unsigned int)time(NULL) + player_num);
+    int random = rand() % player_num;
+    send(player_fd_list[random], &potato, sizeof(potato), 0);
+    cout << "Ready to start the game, sending potato to player " << random << endl;
 
-    // potato.playerID[0] = rand_player;
-    // potato.hops--;
-    // potato.count++;
-    // // send(player_fd_list[rand_player], &potato, sizeof(potato), 0);
-    // Potato *ptr = &potato;
-    // ssize_t bytes_sent;
-    // size_t bytes_left = sizeof(potato);
-    // cout << "bytes left: " << bytes_left << endl;
-    // while (bytes_left > 0) {
-    //     bytes_sent = send(player_fd_list[rand_player], ptr, bytes_left, 0);
-    //     if (bytes_sent < 0) {
-    //         return -1; // error occurred
-    //     }
-    //     bytes_left -= bytes_sent;
-    //     cout << "bytes left: " << bytes_left << endl;
-    //     ptr += bytes_sent;
-    // }
+//     //receive last potato
+//     fd_set readfds;
+//     //int nfds = *max_element(player_fd_list.begin(), player_fd_list.end());
+//     FD_ZERO(&readfds);
+//     for (int i = 0; i < player_num; i++) {
+//       FD_SET(player_fd_list[i], &readfds);
+//     }
+//     select(100, &readfds, NULL, NULL, NULL);
+//     for (int i = 0; i < player_num; i++) {
+//       if (FD_ISSET(player_fd_list[i], &readfds)) {
+//         recv(player_fd_list[i], &potato, sizeof(potato), MSG_WAITALL);
+//         break;
+//       }
+//     }
+   }
+
+//   //send potato with num_hops 0 to all players to shut down
+//   for (int i = 0; i < player_num; i++) {
+//     send(player_fd_list[i], &potato, sizeof(potato), 0);
+//   }
+//   cout << "Trace of potato:" << endl;
+//   for (int i = 0; i < potato.count; i++) {
+//     cout << potato.playerID[i];
+//     if (i != potato.count - 1) {
+//       cout << ",";
+//     }
+//     else {
+//       cout << endl;
+//     }
+//   }
+
+//   for (int i = 0; i < player_num; i++) {
+//     close(player_fd_list[i]);
+//   }
+//   close(socket_fd);
+  return 0;
 }

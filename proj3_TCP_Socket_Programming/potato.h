@@ -17,13 +17,12 @@ class Potato {
     // write a constructor using initialization list, set everything in playerID
     // to 0 using memset
     Potato() : hops(-1), count(0) {
-        memset(playerID, 0, sizeof(playerID));
         // initialize playerID to 0
+        memset(playerID, 0, sizeof(playerID));
     }
     Potato(int hops) : hops(hops), count(0) {
-        // initia
-        memset(playerID, 0, sizeof(playerID));
         // initialize playerID to 0
+        memset(playerID, 0, sizeof(playerID));
     }
 };
 
