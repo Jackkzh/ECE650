@@ -1,7 +1,10 @@
+#ifndef CONNECTION_FUNCTION_H
+#define CONNECTION_FUNCTION_H
+
 #include <netdb.h>
 #include <sys/socket.h>
 #include <sys/types.h>
-
+#include <sys/select.h>
 #include <vector>
 // add header for NULL
 #include <stdio.h>
@@ -20,5 +23,13 @@ int clientInit(const char *host, const char *port);
 void clientJoinConnection(int socket_fd, vector<int> &player_fd_list,
                                  vector<int> &player_port_list, vector<char *> &player_ip_list, int player_num);
 
+
+// players establish connection with each other
 void playerConnect(vector<int> &player_fd_list, vector<int> &player_port_list, vector<char *> &player_ip_list);
-// client establish connection with each other
+
+// void playerRingConnect(char *client_host, int &client_port, int &server_fd, int player_fd, char * my_port);
+
+char * convertPort(int port);
+
+
+#endif
