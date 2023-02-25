@@ -1,74 +1,175 @@
-#include <unistd.h>
+#include "player.h"
 
-#include "connection_function.h"
+#include <sstream>
+
 #include "potato.h"
-// add header for ntop
-#include <arpa/inet.h>
+
+/**
+ * Client inits socket and connects to the server with the given host and port.
+ */
+void Player::initClient() {
+    struct addrinfo client_info;
+    struct addrinfo *client_info_list;
+    int status;
+    memset(&client_info, 0, sizeof(client_info));
+    client_info.ai_family = AF_UNSPEC;
+    client_info.ai_socktype = SOCK_STREAM;
+
+    // initialize the client_info_list, which is a linked list of addrinfo structs
+    status = getaddrinfo(ringmaster_host.c_str(), ringmaster_port.c_str(), &client_info, &client_info_list);
+    if (status != 0) {
+        cerr << "Error: cannot get address info for host " << endl;
+        cerr << gai_strerror(status) << endl;
+        exit(EXIT_FAILURE);
+    }
+
+    // listen_fd is the file descriptor for the socket that will listen for connections
+    connect_fd = socket(client_info_list->ai_family,
+                        client_info_list->ai_socktype,
+                        client_info_list->ai_protocol);
+    if (connect_fd == -1) {
+        cerr << "Error: cannot create socket" << endl;
+        exit(EXIT_FAILURE);
+    }
+
+    // connect to the server(ringmaster)
+    status = connect(connect_fd, client_info_list->ai_addr, client_info_list->ai_addrlen);
+    if (status == -1) {
+        cerr << "Error: cannot connect to socket" << endl;
+        exit(EXIT_FAILURE);
+    }
+    cout << "Connected to " << ringmaster_host << " on port " << ringmaster_port << endl;
+
+    freeaddrinfo(client_info_list);
+}
+
+/**
+ * server start a connection on the given port and listens for connections.
+ */
+void Player::initServer() {
+    cout << "Server Start Connection" << endl;
+
+    int status;
+    struct addrinfo client_info;
+    struct addrinfo *client_info_list;
+    const char *hostname = NULL;
+
+    memset(&client_info, 0, sizeof(client_info));
+    client_info.ai_family = AF_UNSPEC;
+    client_info.ai_socktype = SOCK_STREAM;
+    client_info.ai_flags = AI_PASSIVE;
+
+    // initialize the client_info_list, which is a linked list of addrinfo structs
+    status = getaddrinfo(hostname, my_port.c_str(), &client_info, &client_info_list);
+    if (status != 0) {
+        cerr << " Error: cannot get address info for host" << endl;
+        cerr << gai_strerror(status) << endl;
+        exit(EXIT_FAILURE);
+    }
+
+    // listen_fd is the file descriptor for the socket that will listen for connections
+    listen_fd = socket(client_info_list->ai_family,
+                       client_info_list->ai_socktype,
+                       client_info_list->ai_protocol);
+    if (listen_fd == -1) {
+        cerr << "Error: cannot create socket" << endl;
+        exit(EXIT_FAILURE);
+    }
+
+    int yes = 1;
+    // setsockopt is used to reuse the port
+    status = setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(yes));
+    status = bind(listen_fd, client_info_list->ai_addr, client_info_list->ai_addrlen);
+    if (status == -1) {
+        cerr << "Error: cannot set socket option" << endl;
+        exit(EXIT_FAILURE);
+    }
+
+    status = listen(listen_fd, 100);
+    if (status == -1) {
+        cerr << "Error: cannot listen on socket" << endl;
+        exit(EXIT_FAILURE);
+    }
+    freeaddrinfo(client_info_list);
+}
+
+/**
+ * Player receives the number of players and its id from the ringmaster
+ * and set the hostname and port for itself.
+ */
+void Player::getMyInfo() {
+    int id;
+    int num;
+    recv(connect_fd, &id, sizeof(id), 0);
+    recv(connect_fd, &num, sizeof(num), 0);
+    my_id = id;
+    player_num = num;
+
+    char my_host[256];
+    memset(my_host, 0, sizeof(my_host));
+    int status = gethostname(my_host, 256);
+    if (status == -1) {
+        cerr << "Error: cannot get my hostname" << endl;
+        exit(EXIT_FAILURE);
+    }
+    my_hostname = string(my_host);
+    int my_port_int = atoi(ringmaster_port.c_str()) + my_id + 1;
+    // turn my_port to const char *
+    stringstream ss;
+    ss << my_port_int;
+    my_port = ss.str();
+}
+
+void Player::sendMyInfo() {
+    int len1 = send(connect_fd, my_hostname.c_str(), my_hostname.length(), 0);
+    int len2 = send(connect_fd, my_port.c_str(), my_port.length(), 0);
+}
+
+
+
+/**
+ * Player gets the neighbor's host and port from the ringmaster
+*/
+void Player::getNeighborInfo() {
+    int neighbor_port;
+    char neighbor_host[1024];
+    memset(neighbor_host, 0, sizeof(neighbor_host));
+    int len1 = recv(connect_fd, &neighbor_port, sizeof(neighbor_port), 0);
+    int len2 = recv(connect_fd, neighbor_host, sizeof(neighbor_host), 0);
+    right_neighbor_hostname = string(neighbor_host);
+    stringstream ss;
+    ss << neighbor_port;
+    right_neighbor_port = ss.str();
+}
+
 
 int main(int argc, char *argv[]) {
-    // attributes for a player
-    char my_hostname[256];
-    memset(my_hostname, 0, sizeof(my_hostname));
-    // char my_port[256];  // not used yet
-    int my_id;       // player's id
-    int player_num;  // total number of players
+    const char *ring_name = argv[1];
+    const char *ring_port = argv[2];
+
+    string ring_name_str(ring_name);
+    string ring_port_str(ring_port);
+    Player player(ring_name_str, ring_port_str);
+
+    player.initClient();
+
+    recv(player.connect_fd, &player.my_id, sizeof(player.my_id), 0);
+    recv(player.connect_fd, &player.player_num, sizeof(player.player_num), 0);
 
     // get the port number
-    const char *port = argv[2];
-    const char *machine_name = argv[1];
 
-    cout << port << endl;
-    cout << machine_name << endl;
+    // cout << port << endl;
+    // cout << machine_name << endl;
 
-    // player receives its id from the ringmaster
-    int player_fd = clientInit(machine_name, port);
-
-    // struct sockaddr_storage local_address;
-    // socklen_t address_length = sizeof(local_address);
-    // if (int a = getsockname(player_fd, (struct sockaddr *)&local_address, &address_length) == -1) {
-    //     std::cerr << "Error getting socket name\n";
-    //     cout << "wrong: " << a << endl;
-    //     return 1;
-    // }
-
-    // char address_buffer[INET_ADDRSTRLEN];
-    // int my_port2;
-
-    // struct sockaddr_in *address = (struct sockaddr_in *)&local_address;
-    // inet_ntop(AF_INET, &(address->sin_addr), address_buffer, INET_ADDRSTRLEN);
-    // my_port2 = ntohs(address->sin_port);
-
-    // std::cout << "Local address: " << address_buffer << '\n';
-    // std::cout << "Local port: " << port << '\n';
-    // std::cout << "Local using my_port2: " << my_port2 << '\n';
-
-    recv(player_fd, &my_id, sizeof(my_id), 0);
-    recv(player_fd, &player_num, sizeof(player_num), 0);
-
-    cout << "my id: " << my_id << endl;
-    cout << "player num: " << player_num << endl;
+    // cout << "my id: " << my_id << endl;
+    // cout << "player num: " << player_num << endl;
 
     // player sends its host and port to the ringmaster
-    int status = gethostname(my_hostname, 256);
-    cout << "my hostname: " << my_hostname << endl;
-    if (status == -1) {
-        cerr << "Error: cannot get hostname" << endl;
-        return EXIT_FAILURE;
-    }
-    // player acts as a server can make connections with its left neighbor
-    int my_port_int = atoi(port) + my_id + 1;
-    cout << "myport xxxxx  " << my_port_int << endl;
-    // convert int to const char*
-    const char *my_port = to_string(my_port_int).c_str();
-    // const int size = strlen(my_port_str) + 1;
-    // char my_port2[size];
-    // strcpy(my_port2, my_port_str);
-    int server_listen_fd = serverStartConnection(my_port);
 
-    send(player_fd, &my_port_int, sizeof(my_port_int), 0);
-    int size2 = send(player_fd, &my_hostname, sizeof(my_hostname), 0);
+    int my_port_int = atoi(player.my_port.c_str());
 
-    
+    int sent_len1 = send(player.connect_fd, &my_port_int, sizeof(my_port_int), 0);
+    int sent_len2 = send(player.connect_fd, player.my_hostname.c_str(), sizeof(player.my_hostname.c_str()), 0);
 
     char client_host[1024];
     // fill client_host with 0
@@ -80,8 +181,6 @@ int main(int argc, char *argv[]) {
     client_host[len2] = '\0';
     cout << "my neighbour's port: " << client_port << endl;
     cout << "my neighbour's host: " << client_host << endl;
-
-    
 
     int client_fd = clientInit(machine_name, to_string(client_port).c_str());
     cout << "ring clientfd " << client_fd << endl;
@@ -113,7 +212,6 @@ int main(int argc, char *argv[]) {
         cerr << "Error: cannot accept connection" << endl;
         return EXIT_FAILURE;
     }
-
 
     // cout << "player " << my_id << " connects to its left neighbor" << endl;
 
@@ -168,14 +266,13 @@ int main(int argc, char *argv[]) {
                     //     continue;
                     // }
                     // cout << "potato hop " << potato.hops << endl;
-
                 }
             }
         }
         // if (lenn == 0) {
         //     break;
         // }
-        
+
         // cout << "is potato: " << is_potato << endl;
         // cout << "after recv count" << potato.count << endl;
         cout << "player " << my_id << " receives potato" << endl;

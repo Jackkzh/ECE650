@@ -19,7 +19,7 @@
 
 using namespace std;
 
-int serverStartConnection(const char *port);
+int initServer(const char *port);
 int clientInit(const char *host, const char *port);
 
 void clientJoinConnection(int socket_fd, vector<int> &player_fd_list,
