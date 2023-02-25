@@ -15,20 +15,15 @@
 #include <string.h>
 // add header for exit
 #include <stdlib.h>
-
 #include <iostream>
 
 using namespace std;
-
-
-
 
 int serverStartConnection(const char *port);
 int clientInit(const char *host, const char *port);
 
 void clientJoinConnection(int socket_fd, vector<int> &player_fd_list,
                                  vector<int> &player_port_list, vector<char *> &player_ip_list, int player_num);
-
 
 // players establish connection with each other
 void playerConnect(vector<int> &player_fd_list, vector<int> &player_port_list, vector<char *> &player_ip_list);

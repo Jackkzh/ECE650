@@ -12,17 +12,15 @@ class Potato {
    public:
     int hops;
     int count;
-    int playerID[512];
+    vector<int> playerID;
 
     // write a constructor using initialization list, set everything in playerID
     // to 0 using memset
     Potato() : hops(-1), count(0) {
         // initialize playerID to 0
-        memset(playerID, 0, sizeof(playerID));
     }
     Potato(int hops) : hops(hops), count(0) {
         // initialize playerID to 0
-        memset(playerID, 0, sizeof(playerID));
     }
 };
 

@@ -17,26 +17,30 @@ int main(int argc, char *argv[]) {
     const char *port = argv[2];
     const char *machine_name = argv[1];
 
+    cout << port << endl;
+    cout << machine_name << endl;
+
     // player receives its id from the ringmaster
     int player_fd = clientInit(machine_name, port);
 
-    struct sockaddr_storage local_address;
-    socklen_t address_length = sizeof(local_address);
-    if (getsockname(player_fd, (struct sockaddr *)&local_address, &address_length) == -1) {
-        std::cerr << "Error getting socket name\n";
-        return 1;
-    }
+    // struct sockaddr_storage local_address;
+    // socklen_t address_length = sizeof(local_address);
+    // if (int a = getsockname(player_fd, (struct sockaddr *)&local_address, &address_length) == -1) {
+    //     std::cerr << "Error getting socket name\n";
+    //     cout << "wrong: " << a << endl;
+    //     return 1;
+    // }
 
-    char address_buffer[INET_ADDRSTRLEN];
-    int my_port2;
+    // char address_buffer[INET_ADDRSTRLEN];
+    // int my_port2;
 
-    struct sockaddr_in *address = (struct sockaddr_in *)&local_address;
-    inet_ntop(AF_INET, &(address->sin_addr), address_buffer, INET_ADDRSTRLEN);
-    my_port2 = ntohs(address->sin_port);
+    // struct sockaddr_in *address = (struct sockaddr_in *)&local_address;
+    // inet_ntop(AF_INET, &(address->sin_addr), address_buffer, INET_ADDRSTRLEN);
+    // my_port2 = ntohs(address->sin_port);
 
-    std::cout << "Local address: " << address_buffer << '\n';
-    std::cout << "Local port: " << port << '\n';
-    std::cout << "Local using my_port2: " << my_port2 << '\n';
+    // std::cout << "Local address: " << address_buffer << '\n';
+    // std::cout << "Local port: " << port << '\n';
+    // std::cout << "Local using my_port2: " << my_port2 << '\n';
 
     recv(player_fd, &my_id, sizeof(my_id), 0);
     recv(player_fd, &player_num, sizeof(player_num), 0);
@@ -53,13 +57,18 @@ int main(int argc, char *argv[]) {
     }
     // player acts as a server can make connections with its left neighbor
     int my_port_int = atoi(port) + my_id + 1;
+    cout << "myport xxxxx  " << my_port_int << endl;
     // convert int to const char*
     const char *my_port = to_string(my_port_int).c_str();
     // const int size = strlen(my_port_str) + 1;
     // char my_port2[size];
     // strcpy(my_port2, my_port_str);
+    int server_listen_fd = serverStartConnection(my_port);
+
     send(player_fd, &my_port_int, sizeof(my_port_int), 0);
     int size2 = send(player_fd, &my_hostname, sizeof(my_hostname), 0);
+
+    
 
     char client_host[1024];
     // fill client_host with 0
@@ -72,9 +81,10 @@ int main(int argc, char *argv[]) {
     cout << "my neighbour's port: " << client_port << endl;
     cout << "my neighbour's host: " << client_host << endl;
 
-    int server_listen_fd = serverStartConnection(my_port);
-    int client_fd = clientInit(machine_name, to_string(client_port).c_str());
+    
 
+    int client_fd = clientInit(machine_name, to_string(client_port).c_str());
+    cout << "ring clientfd " << client_fd << endl;
     // player connects to its left neighbor as a server
     struct sockaddr_storage socket_addr;
     socklen_t socket_addr_len = sizeof(socket_addr);
@@ -130,6 +140,7 @@ int main(int argc, char *argv[]) {
                 max_fd = listen_list[i];
             }
         }
+
         int fd_num = select(1000, &read_fds, NULL, NULL, NULL);
         bool is_potato = false;
         int lenn;
@@ -143,22 +154,28 @@ int main(int argc, char *argv[]) {
                 if (FD_ISSET(listen_list[i], &read_fds)) {
                     cout << "listen_list[i]: " << listen_list[i] << endl;
                     int left = 0;
-                    lenn = recv(listen_list[i], &potato, sizeof(potato), MSG_WAITALL);
-                    cout << "lenn: " << lenn << endl;
-                    //break;
-                    if (lenn == 0) {
-                        continue;
+                    int recv_len = 0;
+                    while (true) {
+                        int rcv = recv(listen_list[i], &potato, sizeof(potato), MSG_WAITALL);
+                        recv_len += rcv;
+                        if (rcv == 0) {
+                            break;
+                        }
                     }
+                    is_potato = true;
+                    // lenn = recv(listen_list[i], &potato, sizeof(potato), MSG_WAITALL);
+                    // if (lenn == 0) {
+                    //     continue;
+                    // }
                     // cout << "potato hop " << potato.hops << endl;
 
-                    is_potato = true;
-                    // break;
                 }
             }
         }
-        if (lenn == 0) {
-            //break;
-        }
+        // if (lenn == 0) {
+        //     break;
+        // }
+        
         // cout << "is potato: " << is_potato << endl;
         // cout << "after recv count" << potato.count << endl;
         cout << "player " << my_id << " receives potato" << endl;
@@ -194,10 +211,6 @@ int main(int argc, char *argv[]) {
             }
         }
     }
- 
-    close(client_fd);
-    close(server_fd);
-    close(player_fd);
     return 0;
 }
 // fd_num is the socket descriptor that has data to read
