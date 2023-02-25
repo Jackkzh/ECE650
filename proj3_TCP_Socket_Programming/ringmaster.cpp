@@ -64,7 +64,7 @@ void RingMaster::initServer(const char *port) {
  */
 void RingMaster::clientJoinConnection() {
     struct sockaddr_storage socket_addr;
-    socklen_t socket_addr_len = sizeof(socket_addddr);
+    socklen_t socket_addr_len = sizeof(socket_addr);
     int new_fd;
     int status;
     int i;

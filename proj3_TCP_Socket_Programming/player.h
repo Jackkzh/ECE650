@@ -30,8 +30,9 @@ class Player {
                                                                player_num(-1), my_hostname(""), 
                                                                my_port(""), right_neighbor_hostname(""), 
                                                                right_neighbor_port(""){};
-    void initClient();
+    void initClient(int fd, string host, string port);
     void initServer();
+    void acceptConnection();
     void getMyInfo();
     void sendMyInfo();
     void getNeighborInfo();
