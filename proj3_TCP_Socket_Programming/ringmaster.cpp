@@ -6,7 +6,7 @@
  * @return the file descriptor for the socket that will listen for connections
  */
 void RingMaster::initServer() {
-    //cout << "Server Start Connection" << endl;
+    // cout << "Server Start Connection" << endl;
 
     int status;
     struct addrinfo client_info;
@@ -70,14 +70,14 @@ void RingMaster::clientJoinConnection() {
     // Initialize all connect() for every player with the server which listens to the connection
     // curr_player is the ID of each player(can retrieve through vector)
     for (int curr_player = 0; curr_player < player_num; curr_player++) {
-        //cout << "this is connecting to the " << curr_player << "th player" << endl;
+        // cout << "this is connecting to the " << curr_player << "th player" << endl;
         new_fd = accept(listen_fd, (struct sockaddr *)&socket_addr, &socket_addr_len);
 
         if (new_fd == -1) {
             cerr << "Error: cannot accept connection on socket" << endl;
             exit(EXIT_FAILURE);
         }
-        //cout << "successfully connected to the " << curr_player << "th player" << endl;
+        // cout << "successfully connected to the " << curr_player << "th player" << endl;
 
         // tell the player which ID it is
         send(new_fd, &curr_player, sizeof(curr_player), 0);
@@ -90,22 +90,22 @@ void RingMaster::clientJoinConnection() {
         char client_host[4096];
         memset(client_host, 0, sizeof(client_host));
 
-        //cout << "before recv" << endl;
+        // cout << "before recv" << endl;
         int client_port;
         recv(new_fd, &client_port, sizeof(client_port), 0);
-        //cout << "player's port: " << client_port << endl;
+        // cout << "player's port: " << client_port << endl;
         int len2 = recv(new_fd, client_host, sizeof(client_host), 0);
 
-        //cout << "after recv" << endl;
+        // cout << "after recv" << endl;
 
         client_host[len2] = '\0';
 
-        //cout << "player's host: " << client_host << endl;
+        // cout << "player's host: " << client_host << endl;
 
         player_port_list.push_back(client_port);
         player_ip_list.push_back(client_host);
 
-        //cout << "player post: " << player_port_list[curr_player] << endl;
+        // cout << "player post: " << player_port_list[curr_player] << endl;
     }
     // cout << "succfully connected to all players: " << curr_player << endl;
 }
@@ -115,11 +115,11 @@ void RingMaster::clientJoinConnection() {
  */
 void RingMaster::playerConnect() {
     for (int curr = 0; curr < player_num; curr++) {
-        //int server_port = player_port_list[curr];
+        // int server_port = player_port_list[curr];
         char *server_host = player_ip_list[curr];
         size_t host_len = strlen(server_host) + 1;
         // cout << server_host << endl;
-        //cout << "this is the " << curr << "th player" << endl;
+        // cout << "this is the " << curr << "th player" << endl;
         int prev = (curr - 1 + player_num) % player_num;
         send(player_fd_list[prev], &(player_port_list[curr]), sizeof(player_port_list[curr]), 0);
         // cout << "player: " << player_port_list[curr] << endl;
@@ -128,7 +128,7 @@ void RingMaster::playerConnect() {
 }
 
 void RingMaster::printTrace(Potato &potato) {
-    cout << potato.count << endl;
+    //cout << potato.count << endl;
     for (int i = 0; i < potato.count; i++) {
         cout << potato.playerID[i];
         if (i != potato.count - 1) {
@@ -139,33 +139,35 @@ void RingMaster::printTrace(Potato &potato) {
 }
 
 void RingMaster::playGame() {
-    sleep(2);
+    sleep(1);
     Potato potato(hop_num);
     fd_set read_fds;
     FD_ZERO(&read_fds);
     srand((unsigned int)time(NULL) + player_num);
     int rand_player = rand() % player_num;
-    send(player_fd_list[rand_player], &potato, sizeof(potato), 0);
-    cout << "Ready to start the game, sending potato to player " << rand_player << endl;
+    if (hop_num > 0) {
+        send(player_fd_list[rand_player], &potato, sizeof(potato), 0);
+        cout << "Ready to start the game, sending potato to player " << rand_player << endl;
 
-    for (int i = 0; i < player_num; i++) {
-        FD_SET(player_fd_list[i], &read_fds);
-    }
-    // find the biggest fd
-    int max_fd = 0;
-    for (int i = 0; i < player_num; i++) {
-        if (player_fd_list[i] > max_fd) {
-            max_fd = player_fd_list[i];
+        for (int i = 0; i < player_num; i++) {
+            FD_SET(player_fd_list[i], &read_fds);
         }
-    }
-    
-    select(max_fd + 1, &read_fds, NULL, NULL, NULL);
-    cout << "select is done" << endl;
-    for (int i = 0; i < player_num; i++) {
-        if (FD_ISSET(player_fd_list[i], &read_fds)) {
-            //cout << "Player " << i << " is it" << endl;
-            recv(player_fd_list[i], &potato, sizeof(potato), 0);
-            break;
+        // find the biggest fd
+        int max_fd = 0;
+        for (int i = 0; i < player_num; i++) {
+            if (player_fd_list[i] > max_fd) {
+                max_fd = player_fd_list[i];
+            }
+        }
+
+        select(max_fd + 1, &read_fds, NULL, NULL, NULL);
+        cout << "select is done" << endl;
+        for (int i = 0; i < player_num; i++) {
+            if (FD_ISSET(player_fd_list[i], &read_fds)) {
+                // cout << "Player " << i << " is it" << endl;
+                recv(player_fd_list[i], &potato, sizeof(potato), 0);
+                break;
+            }
         }
     }
     potato.hops = -1;
@@ -203,6 +205,7 @@ int main(int argc, char *argv[]) {
     ringmaster.clientJoinConnection();
     ringmaster.playerConnect();
     ringmaster.playGame();
+    
 
     return 0;
 }
