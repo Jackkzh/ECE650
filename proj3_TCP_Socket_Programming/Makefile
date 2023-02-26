@@ -1,12 +1,15 @@
 TARGETS=ringmaster player
 
+CC=g++
+CFLAGS= -O3 -std=c++11
+
 all: $(TARGETS)
 
-ringmaster: ringmaster.cpp connection_function.cpp potato.h 
-	g++ -ggdb3 -o ringmaster ringmaster.cpp connection_function.cpp
+ringmaster: ringmaster.cpp potato.h ringmaster.h
+	$(CC) $(CFLAGS) -o ringmaster ringmaster.cpp 
 
-player: player.cpp connection_function.cpp potato.h 
-	g++ -ggdb3 -o player player.cpp connection_function.cpp
+player: player.cpp potato.h player.h
+	$(CC) $(CFLAGS) -o player player.cpp 
 
 .PHONY:
 	clean
