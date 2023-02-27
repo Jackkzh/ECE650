@@ -1,7 +1,7 @@
 TARGETS=ringmaster player
 
 CC=g++
-CFLAGS= -O3 -std=c++11
+CFLAGS= -ggdb3 -std=c++11
 
 all: $(TARGETS)
 

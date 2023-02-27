@@ -1,5 +1,8 @@
 #include "ringmaster.h"
 
+#include <chrono>
+#include <ctime>
+#include <iomanip>
 /**
  * server start a connection on the given port and listens for connections.
  * @param port the port number to listen on as a server
@@ -64,20 +67,15 @@ void RingMaster::clientJoinConnection() {
     struct sockaddr_storage socket_addr;
     socklen_t socket_addr_len = sizeof(socket_addr);
     int new_fd;
-    // int status;
-    // int i;
 
     // Initialize all connect() for every player with the server which listens to the connection
     // curr_player is the ID of each player(can retrieve through vector)
     for (int curr_player = 0; curr_player < player_num; curr_player++) {
-        // cout << "this is connecting to the " << curr_player << "th player" << endl;
         new_fd = accept(listen_fd, (struct sockaddr *)&socket_addr, &socket_addr_len);
-
         if (new_fd == -1) {
             cerr << "Error: cannot accept connection on socket" << endl;
             exit(EXIT_FAILURE);
         }
-        // cout << "successfully connected to the " << curr_player << "th player" << endl;
 
         // tell the player which ID it is
         send(new_fd, &curr_player, sizeof(curr_player), 0);
@@ -90,24 +88,14 @@ void RingMaster::clientJoinConnection() {
         char client_host[4096];
         memset(client_host, 0, sizeof(client_host));
 
-        // cout << "before recv" << endl;
         int client_port;
         recv(new_fd, &client_port, sizeof(client_port), 0);
-        // cout << "player's port: " << client_port << endl;
         int len2 = recv(new_fd, client_host, sizeof(client_host), 0);
-
-        // cout << "after recv" << endl;
-
         client_host[len2] = '\0';
-
-        // cout << "player's host: " << client_host << endl;
 
         player_port_list.push_back(client_port);
         player_ip_list.push_back(client_host);
-
-        // cout << "player post: " << player_port_list[curr_player] << endl;
     }
-    // cout << "succfully connected to all players: " << curr_player << endl;
 }
 
 /**
@@ -115,20 +103,21 @@ void RingMaster::clientJoinConnection() {
  */
 void RingMaster::playerConnect() {
     for (int curr = 0; curr < player_num; curr++) {
-        // int server_port = player_port_list[curr];
-        char *server_host = player_ip_list[curr];
-        size_t host_len = strlen(server_host) + 1;
-        // cout << server_host << endl;
-        // cout << "this is the " << curr << "th player" << endl;
+        // char player_host[128] = {0};
+        // int len = strlen(player_ip_list[curr]);
+        // strncpy(player_host, player_ip_list[curr], len);
         int prev = (curr - 1 + player_num) % player_num;
         send(player_fd_list[prev], &(player_port_list[curr]), sizeof(player_port_list[curr]), 0);
-        // cout << "player: " << player_port_list[curr] << endl;
-        send(player_fd_list[prev], server_host, host_len, 0);
+        // send(player_fd_list[prev], player_host, len, 0);
+        // cout << a << endl;
     }
 }
 
+/**
+ * print the trace of the potato
+ * @param potato the potato that is passed around
+*/
 void RingMaster::printTrace(Potato &potato) {
-    //cout << potato.count << endl;
     for (int i = 0; i < potato.count; i++) {
         cout << potato.playerID[i];
         if (i != potato.count - 1) {
@@ -138,17 +127,20 @@ void RingMaster::printTrace(Potato &potato) {
     cout << endl;
 }
 
+/**
+ * play the game
+ */
 void RingMaster::playGame() {
-    sleep(1);
     Potato potato(hop_num);
-    fd_set read_fds;
-    FD_ZERO(&read_fds);
+
     srand((unsigned int)time(NULL) + player_num);
     int rand_player = rand() % player_num;
     if (hop_num > 0) {
-        send(player_fd_list[rand_player], &potato, sizeof(potato), 0);
+        int b = send(player_fd_list[rand_player], &potato, sizeof(potato), 0);
         cout << "Ready to start the game, sending potato to player " << rand_player << endl;
 
+        fd_set read_fds;
+        FD_ZERO(&read_fds);
         for (int i = 0; i < player_num; i++) {
             FD_SET(player_fd_list[i], &read_fds);
         }
@@ -161,26 +153,20 @@ void RingMaster::playGame() {
         }
 
         select(max_fd + 1, &read_fds, NULL, NULL, NULL);
-        cout << "select is done" << endl;
+
         for (int i = 0; i < player_num; i++) {
             if (FD_ISSET(player_fd_list[i], &read_fds)) {
-                // cout << "Player " << i << " is it" << endl;
-                recv(player_fd_list[i], &potato, sizeof(potato), 0);
+                recv(player_fd_list[i], &potato, sizeof(potato), MSG_WAITALL);
+                for (int i = 0; i < player_num; i++) {
+                    send(player_fd_list[i], &potato, sizeof(potato), 0);
+                }
                 break;
             }
         }
     }
-    potato.hops = -1;
-    // at last, make sure to close all the sockets
-    for (int i = 0; i < player_num; i++) {
-        send(player_fd_list[i], &potato, sizeof(potato), 0);
-    }
+
     cout << "Trace of potato:" << endl;
     printTrace(potato);
-    for (int i = 0; i < player_num; i++) {
-        close(player_fd_list[i]);
-    }
-    close(listen_fd);
 }
 
 int main(int argc, char *argv[]) {
@@ -200,33 +186,12 @@ int main(int argc, char *argv[]) {
     cout << "Hops = " << hop_num << endl;
 
     string my_port = string(port);
-    RingMaster ringmaster(my_port, player_num, hop_num);
-    ringmaster.initServer();
-    ringmaster.clientJoinConnection();
-    ringmaster.playerConnect();
-    ringmaster.playGame();
-    
 
-    return 0;
+    RingMaster *ringmaster = new RingMaster(my_port, player_num, hop_num);
+    ringmaster->initServer();
+    ringmaster->clientJoinConnection();
+    ringmaster->playerConnect();
+    ringmaster->playGame();
+    delete ringmaster;
+    return EXIT_SUCCESS;
 }
-
-// // server inits socket and listen to the connection
-// int socket_fd = initServer(port);
-
-// // accept the connection from all the players
-// vector<int> player_fd_list;
-// vector<int> player_port_list;
-// vector<char *> player_ip_list;
-// clientJoinConnection(socket_fd, player_fd_list, player_port_list, player_ip_list, player_num);
-// cout << "All players present, ready to play" << endl;
-// // print out all the port numbers and ip addresses of the players
-// for (int i = 0; i < player_num; i++) {
-//     cout << "Player " << i << " has IP address " << player_ip_list[i] << " and port number " << player_port_list[i] << endl;
-// }
-
-// playerConnect(player_fd_list, player_port_list, player_ip_list);
-
-// // print our fdlist
-// // for (int i = 0; i < player_num; i++) {
-// //     cout << "player " << i << " fd: " << player_fd_list[i] << endl;
-// // }

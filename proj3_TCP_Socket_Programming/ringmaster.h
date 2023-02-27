@@ -1,6 +1,7 @@
 #ifndef RINGMASTER_H
 #define RINGMASTER_H
 
+#include <cstdlib>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <stdio.h>
@@ -11,6 +12,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <time.h>
 #include <cstring>
 #include <iostream>
 #include <vector>
@@ -35,7 +37,12 @@ class RingMaster {
                                                           hop_num(_hop),
                                                           listen_fd(-2),
                                                           player_num(_player_num){};
-
+    virtual ~RingMaster() {
+        for (int i = 0; i < player_num; i++) {
+            close(player_fd_list[i]);
+        }
+        close(listen_fd);
+    }
     void initServer();
     void clientJoinConnection();
     void playerConnect();
