@@ -90,11 +90,11 @@ void RingMaster::clientJoinConnection() {
 
         int client_port;
         recv(new_fd, &client_port, sizeof(client_port), 0);
-        int len2 = recv(new_fd, client_host, sizeof(client_host), 0);
-        client_host[len2] = '\0';
+        //int len2 = recv(new_fd, client_host, sizeof(client_host), 0);
+        //client_host[len2] = '\0';
 
         player_port_list.push_back(client_port);
-        player_ip_list.push_back(client_host);
+        //player_ip_list.push_back(client_host);
     }
 }
 

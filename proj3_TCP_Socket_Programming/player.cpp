@@ -113,6 +113,7 @@ void Player::getMyInfo() {
     player_num = num;
     cout << "Connected as player " << my_id << " out of " << player_num << " total players" << endl;
 
+    //initServer();
     char my_host[256];
     memset(my_host, 0, sizeof(my_host));
     int status = gethostname(my_host, 256);
@@ -123,12 +124,13 @@ void Player::getMyInfo() {
 
     my_hostname = string(my_host);
     int my_port_int = atoi(ringmaster_port.c_str()) + my_id + 1;
+
     stringstream ss;
     ss << my_port_int;
     my_port = ss.str();
-
+    initServer();
     int len2 = send(connect_fd, &my_port_int, sizeof(my_port_int), 0);
-    int len1 = send(connect_fd, &my_host, sizeof(my_host), 0);
+    //int len1 = send(connect_fd, &my_host, sizeof(my_host), 0);
 }
 
 /**
@@ -190,13 +192,22 @@ void Player::passPotato() {
             for (size_t i = 0; i < listen_list.size(); i++) {
                 if (FD_ISSET(listen_list[i], &read_fds)) {
                     recv(listen_list[i], &potato, sizeof(potato), 0);
+                    cout << "---*****---" << endl;
+                    if (i == 0) {
+                        cout << "recevied from " << "left neighbor" << endl;
+                    } else if (i == 1) {
+                        cout << "recevied from " << "right neighbor" << endl;
+                    } else {
+                        cout << "recevied from " << "ringmaster" << endl;
+                    }
                     cout << "potato.hops: " << potato.hops << endl;
+
                     break;
                 }
             }
         }
         if (potato.hops == 0) {
-            cout << "getting -1 " << endl;
+            // cout << "getting -1 " << endl;
             return;
         }
         if (potato.hops == 1) {
@@ -207,6 +218,7 @@ void Player::passPotato() {
             send(connect_fd, &potato, sizeof(potato), 0);
             continue;
         } else {
+            cout << potato.count << endl;
             potato.playerID[potato.count] = my_id;
             potato.hops--;
             potato.count++;
@@ -222,6 +234,7 @@ void Player::passPotato() {
                 send(client_fd, &potato, sizeof(potato), 0);
                 cout << "Sending potato to " << dest_id << endl;
             }
+            cout << "---*****---" << endl;
         }
     }
 }
@@ -233,14 +246,13 @@ int main(int argc, char *argv[]) {
     string ring_port_str(ring_port);
 
     Player *player = new Player(ring_name_str, ring_port_str);
+    
     player->initClient(player->connect_fd, player->ringmaster_host, player->ringmaster_port);
+    
     player->getMyInfo();
-    player->initServer();
+    //player->initServer();
     player->getNeighborInfo();
-    cout << "preparing for potato" << endl;
-    cout << player->my_hostname << " " << player->my_port << endl;
     player->initClient(player->client_fd, player->my_hostname, player->right_neighbor_port);
-    cout << "preparing for potato" << endl;
     player->acceptConnection();
     player->passPotato();
     delete player;
