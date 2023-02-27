@@ -46,6 +46,19 @@ int main(int argc, char *argv[]) {
     // begin playing
     Potato potato(hop_num);
 
+    srand(time(NULL) + player_num);
+    int random_player = rand() % player_num;
+    cout << "Ready to start the game, sending potato to player " << random_player << endl;
+    send(player_fd_list[random_player], &potato, sizeof(potato), 0);
+
+    // listen to the player who has the potato
+    fd_set read_fds;
+    FD_ZERO(&read_fds);
+    FD_SET(player_fd_list[random_player], &read_fds);
+    int max_fd = player_fd_list[random_player];
+    int fd_num = select(max_fd + 1, &read_fds, NULL, NULL, NULL);
+
+
     
 
 
