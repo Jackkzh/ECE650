@@ -42,7 +42,7 @@ void Player::initClient(int &fd, string &host, string &port) {
 /**
  * server start a connection on the given port and listens for connections.
  */
-void Player::initServer() {
+void Player::initServer(const char * my_port) {
     int status;
     struct addrinfo client_info;
     struct addrinfo *client_info_list;
@@ -54,7 +54,7 @@ void Player::initServer() {
     client_info.ai_flags = AI_PASSIVE;
 
     // initialize the client_info_list, which is a linked list of addrinfo structs
-    status = getaddrinfo(hostname, my_port.c_str(), &client_info, &client_info_list);
+    status = getaddrinfo(hostname, my_port, &client_info, &client_info_list);
     if (status != 0) {
         cerr << " Error: cannot get address info for host" << endl;
         cerr << gai_strerror(status) << endl;
@@ -125,11 +125,11 @@ void Player::getMyInfo() {
     my_hostname = string(my_host);
     int my_port_int = atoi(ringmaster_port.c_str()) + my_id + 1;
 
-    stringstream ss;
-    ss << my_port_int;
-    my_port = ss.str();
-    initServer();
-    int len2 = send(connect_fd, &my_port_int, sizeof(my_port_int), 0);
+    // stringstream ss;
+    // ss << my_port_int;
+    // my_port = ss.str();
+
+    //int len2 = send(connect_fd, &my_port_int, sizeof(my_port_int), 0);
     //int len1 = send(connect_fd, &my_host, sizeof(my_host), 0);
 }
 
@@ -138,10 +138,11 @@ void Player::getMyInfo() {
  */
 void Player::sendMyInfo() {
     // change my_port to int
-    int my_port_int = atoi(my_port.c_str());
-    const char *my_hostname_c = my_hostname.c_str();
-    int len2 = send(connect_fd, &my_port_int, sizeof(my_port_int), 0);
-    int len1 = send(connect_fd, my_hostname_c, strlen(my_hostname_c), 0);
+    //int my_port_int = atoi(my_port.c_str());
+    //const char *my_hostname_c = my_hostname.c_str();
+    int port = atoi(my_port.c_str());
+    int len2 = send(connect_fd, &port, sizeof(port), 0);
+    //int len1 = send(connect_fd, my_hostname_c, strlen(my_hostname_c), 0);
 }
 
 /**
@@ -192,15 +193,15 @@ void Player::passPotato() {
             for (size_t i = 0; i < listen_list.size(); i++) {
                 if (FD_ISSET(listen_list[i], &read_fds)) {
                     recv(listen_list[i], &potato, sizeof(potato), 0);
-                    cout << "---*****---" << endl;
-                    if (i == 0) {
-                        cout << "recevied from " << "left neighbor" << endl;
-                    } else if (i == 1) {
-                        cout << "recevied from " << "right neighbor" << endl;
-                    } else {
-                        cout << "recevied from " << "ringmaster" << endl;
-                    }
-                    cout << "potato.hops: " << potato.hops << endl;
+                    // cout << "---*****---" << endl;
+                    // if (i == 0) {
+                    //     cout << "recevied from " << "left neighbor" << endl;
+                    // } else if (i == 1) {
+                    //     cout << "recevied from " << "right neighbor" << endl;
+                    // } else {
+                    //     cout << "recevied from " << "ringmaster" << endl;
+                    // }
+                    // cout << "potato.hops: " << potato.hops << endl;
 
                     break;
                 }
@@ -218,7 +219,7 @@ void Player::passPotato() {
             send(connect_fd, &potato, sizeof(potato), 0);
             continue;
         } else {
-            cout << potato.count << endl;
+            //cout << "potato hops " << potato.hops << endl;
             potato.playerID[potato.count] = my_id;
             potato.hops--;
             potato.count++;
@@ -234,9 +235,24 @@ void Player::passPotato() {
                 send(client_fd, &potato, sizeof(potato), 0);
                 cout << "Sending potato to " << dest_id << endl;
             }
-            cout << "---*****---" << endl;
+            //cout << "---*****---" << endl;
         }
     }
+}
+
+void Player::savePort() {
+  // get OS assigned port
+  struct sockaddr_in sin;
+  socklen_t len = sizeof(sin);
+  if (getsockname(listen_fd, (struct sockaddr *)&sin, &len) == -1)
+    perror("getsockname error");
+  //  std::cout << "Waiting for connection on port " << ntohs(sin.sin_port)
+  //<< std::endl;
+  int port =  ntohs(sin.sin_port);
+    // convert port to string
+    stringstream ss;
+    ss << port;
+    my_port = ss.str();
 }
 
 int main(int argc, char *argv[]) {
@@ -250,7 +266,9 @@ int main(int argc, char *argv[]) {
     player->initClient(player->connect_fd, player->ringmaster_host, player->ringmaster_port);
     
     player->getMyInfo();
-    //player->initServer();
+    player->initServer("");
+    player->savePort();
+    player->sendMyInfo();
     player->getNeighborInfo();
     player->initClient(player->client_fd, player->my_hostname, player->right_neighbor_port);
     player->acceptConnection();

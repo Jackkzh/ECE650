@@ -46,7 +46,8 @@ class Player {
     }
 
     void initClient(int &fd, string &host, string &port);
-    void initServer();
+    void initServer(const char *port);
+    void savePort();
     void acceptConnection();
     void getMyInfo();
     void sendMyInfo();
