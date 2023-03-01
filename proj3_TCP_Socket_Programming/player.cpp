@@ -207,7 +207,7 @@ void Player::passPotato() {
             }
         }
         if (potato.hops == 0) {
-            cout << "return the pass " << endl;
+            // cout << "return the pass " << endl;
             return;
         }
         if (potato.hops == 1) {

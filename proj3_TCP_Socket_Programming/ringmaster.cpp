@@ -138,7 +138,7 @@ void RingMaster::playGame() {
 
     if (potato.hops == 0) {
         // send a potato which hops = 0 to all the players, to close the connection
-        cout << "hops = 0l;" << endl;
+        // cout << "hops = 0l;" << endl;
         for (int i = 0; i < player_num; i++) {
             send(player_fd_list[i], &potato, sizeof(potato), 0);
         }
