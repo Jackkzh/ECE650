@@ -90,11 +90,11 @@ void RingMaster::clientJoinConnection() {
 
         int client_port;
         recv(new_fd, &client_port, sizeof(client_port), 0);
-        //int len2 = recv(new_fd, client_host, sizeof(client_host), 0);
-        //client_host[len2] = '\0';
+        // int len2 = recv(new_fd, client_host, sizeof(client_host), 0);
+        // client_host[len2] = '\0';
 
         player_port_list.push_back(client_port);
-        //player_ip_list.push_back(client_host);
+        // player_ip_list.push_back(client_host);
     }
 }
 
@@ -116,7 +116,7 @@ void RingMaster::playerConnect() {
 /**
  * print the trace of the potato
  * @param potato the potato that is passed around
-*/
+ */
 void RingMaster::printTrace(Potato &potato) {
     for (int i = 0; i < potato.count; i++) {
         cout << potato.playerID[i];
@@ -135,6 +135,16 @@ void RingMaster::playGame() {
 
     srand((unsigned int)time(NULL) + player_num);
     int rand_player = rand() % player_num;
+
+    if (potato.hops == 0) {
+        // send a potato which hops = 0 to all the players, to close the connection
+        cout << "hops = 0l;" << endl;
+        for (int i = 0; i < player_num; i++) {
+            send(player_fd_list[i], &potato, sizeof(potato), 0);
+        }
+        return;
+    }
+
     if (hop_num > 0) {
         int b = send(player_fd_list[rand_player], &potato, sizeof(potato), 0);
         cout << "Ready to start the game, sending potato to player " << rand_player << endl;

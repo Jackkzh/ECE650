@@ -202,13 +202,12 @@ void Player::passPotato() {
                     //     cout << "recevied from " << "ringmaster" << endl;
                     // }
                     // cout << "potato.hops: " << potato.hops << endl;
-
                     break;
                 }
             }
         }
         if (potato.hops == 0) {
-            // cout << "getting -1 " << endl;
+            cout << "return the pass " << endl;
             return;
         }
         if (potato.hops == 1) {
