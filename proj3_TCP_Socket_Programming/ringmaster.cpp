@@ -166,6 +166,7 @@ void RingMaster::playGame() {
 
         for (int i = 0; i < player_num; i++) {
             if (FD_ISSET(player_fd_list[i], &read_fds)) {
+                cout << "from player " << i << endl;
                 recv(player_fd_list[i], &potato, sizeof(potato), MSG_WAITALL);
                 for (int i = 0; i < player_num; i++) {
                     send(player_fd_list[i], &potato, sizeof(potato), 0);

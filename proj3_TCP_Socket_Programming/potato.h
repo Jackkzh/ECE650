@@ -15,7 +15,7 @@ class Potato {
 
     // write a constructor using initialization list, set everything in playerID
     // to 0 using memset
-    Potato() : hops(0), count(0) {
+    Potato() : hops(-1), count(-1) {
         // initialize playerID to 0
         memset(playerID, 0, sizeof(playerID));
     }
