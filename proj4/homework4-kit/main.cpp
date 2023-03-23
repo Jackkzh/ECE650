@@ -41,22 +41,16 @@ int main(int argc, char *argv[]) {
     insertColor(C, "color.txt");
     insertTeam(C, "team.txt");
     insertPlayer(C, "player.txt");
-    cout << "*********Insert complete********" << endl;
+    
+    //cout << "*********Insert complete********" << endl;
 
     // printTable(C, "STATE");
     // printColor(C, "COLOR");
     // printTeam(C, "TEAM");
     // printPlayer(C, "PLAYER");
 
-
-
-
-
     exercise(C);
-    cout << "Exercise complete" << endl;
-
-    // Close database connection
     C->disconnect();
 
-    return 0;
+    return EXIT_SUCCESS;
 }

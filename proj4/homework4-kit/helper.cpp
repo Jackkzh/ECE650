@@ -1,4 +1,5 @@
 #include "helper.h"
+#include "query_funcs.h"
 
 /**
  * Drop a table if it exists
@@ -49,14 +50,14 @@ void insertState(connection *C, const char *state_file) {
         while (getline(file, line)) {
             stringstream ss(line);
             string abbreviation = line.substr(line.find(" ") + 1);
-            // string state_name;
-            // string state_abbrev;
-            // getline(ss, state_name, ' ');
-            // getline(ss, state_abbrev, ' ');
+            
+            add_state(C, abbreviation);
+            
+            /*
             work W(*C);
-            /* Execute SQL query */
             W.exec("INSERT INTO STATE VALUES (DEFAULT, '" + abbreviation + "');");
             W.commit();
+            */
         }
         file.close();
     } catch (ifstream::failure &e) {
@@ -76,11 +77,15 @@ void insertColor(connection *C, const char *state_file) {
         string line;
         while (getline(file, line)) {
             stringstream ss(line);
-            string color = line.substr(line.find(" ") + 1);
+            string id, color;
+            ss >> id >> color;
+            //string color = line.substr(line.find(" ") + 1);
+            add_color(C, color);
+            /*
             work W(*C);
-            /* Execute SQL query */
             W.exec("INSERT INTO COLOR (NAME) VALUES ('" + color + "');");
             W.commit();
+            */
         }
         file.close();
     } catch (ifstream::failure &e) {
@@ -102,16 +107,17 @@ void insertTeam(connection *C, const char *team_file) {
             stringstream ss(line);
             // string color = line.substr(line.find(" ") + 1);
             int state_id, color_id, win, loss;
-            string team_name;
-            ss.ignore(numeric_limits<streamsize>::max(), ' ');
-            ss >> team_name >> state_id >> color_id >> win >> loss;
-
+            string team_name, team_id;
+            //ss.ignore(numeric_limits<streamsize>::max(), ' ');
+            ss >> team_id >> team_name >> state_id >> color_id >> win >> loss;
+            add_team(C, team_name, state_id, color_id, win, loss);
+            /*
             work W(*C);
-            /* Execute SQL query */
             W.exec("INSERT INTO TEAM (NAME, STATE_ID, COLOR_ID, WINS, LOSSES) VALUES ('" +
                    team_name + "', " + to_string(state_id) + ", " + to_string(color_id) +
                    ", " + to_string(win) + ", " + to_string(loss) + ")");
             W.commit();
+            */
         }
         file.close();
     } catch (ifstream::failure &e) {
@@ -135,35 +141,33 @@ void insertPlayer(connection *C, const char *player_file) {
         while (getline(file, line)) {
             stringstream ss(line);
             // string color = line.substr(line.find(" ") + 1);
-            int team_id, number, mpg, ppg, rpg, qpg;
+            int team_id, number, mpg, ppg, rpg, apg;
             float spg, bpg;
-            string first_name, last_name;
-            ss.ignore(numeric_limits<streamsize>::max(), ' ');
-            ss >> team_id >> number >> first_name >> last_name >> mpg >> ppg >> rpg >> qpg >> spg >> bpg;
+            string player_id, first_name, last_name;
+            //ss.ignore(numeric_limits<streamsize>::max(), ' ');
+            ss >> player_id >> team_id >> number >> first_name >> last_name >> mpg >> ppg >> rpg >> apg >> spg >> bpg;      
 
-            string sanitized_first_name = first_name;
-            size_t pos = first_name.find("'");
-            while (pos != string::npos) {
-                sanitized_first_name.replace(pos, 1, "''");
-                pos = sanitized_first_name.find("'", pos + 2);
-            }
-            // if (size_t pos = first_name.find("'") != std::string::npos) {
-            //     // make Ja'Quan to Ja''Quan
-            //     sanitized_first_name = "'" + first_name + "'";
+            add_player(C, team_id, number, first_name, last_name, mpg, ppg, rpg, apg, spg, bpg);
+
+            // string sanitized_first_name = first_name;
+            // size_t pos = first_name.find("'");
+            // while (pos != string::npos) {
+            //     sanitized_first_name.replace(pos, 1, "''");
+            //     pos = sanitized_first_name.find("'", pos + 2);
             // }
-            string sanitized_last_name = last_name;
-            pos = last_name.find("'");
-            while (pos != string::npos) {
-                sanitized_last_name.replace(pos, 1, "''");
-                pos = sanitized_last_name.find("'", pos + 2);
-            }
-            work W(*C);
-            /* Execute SQL query */
-            W.exec("INSERT INTO PLAYER (TEAM_ID, UNIFORM_NUM, FIRST_NAME, LAST_NAME, MPG, PPG, RPG, APG, SPG, BPG) VALUES (" +
-                   to_string(team_id) + ", " + to_string(number) + ", '" + sanitized_first_name + "', '" + sanitized_last_name + "', " +
-                   to_string(mpg) + ", " + to_string(ppg) + ", " + to_string(rpg) + ", " + to_string(qpg) + ", " +
-                   to_string(spg) + ", " + to_string(bpg) + ")");
-            W.commit();
+            // string sanitized_last_name = last_name;
+            // pos = last_name.find("'");
+            // while (pos != string::npos) {
+            //     sanitized_last_name.replace(pos, 1, "''");
+            //     pos = sanitized_last_name.find("'", pos + 2);
+            // }
+            // work W(*C);
+            // /* Execute SQL query */
+            // W.exec("INSERT INTO PLAYER (TEAM_ID, UNIFORM_NUM, FIRST_NAME, LAST_NAME, MPG, PPG, RPG, APG, SPG, BPG) VALUES (" +
+            //        to_string(team_id) + ", " + to_string(number) + ", '" + sanitized_first_name + "', '" + sanitized_last_name + "', " +
+            //        to_string(mpg) + ", " + to_string(ppg) + ", " + to_string(rpg) + ", " + to_string(apg) + ", " +
+            //        to_string(spg) + ", " + to_string(bpg) + ")");
+            // W.commit();
         }
         file.close();
     } catch (ifstream::failure &e) {
