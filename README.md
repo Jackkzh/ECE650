@@ -1,2 +1,3 @@
 # ECE650
-11
+
+Duke ECE 650 System Engineering
